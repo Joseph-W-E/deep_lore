@@ -1,81 +1,90 @@
 import 'package:f_web/network.dart';
+import 'package:f_web/theme.dart';
+import 'package:f_web/widgets/background.dart';
+import 'package:f_web/widgets/nav_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-void main() {
-  final api = GithubApi();
-  // todo
-
-  runApp(_App(api));
+void main() async {
+  runApp(const _LoadingApp());
+  final root = await GithubApi().getContents();
+  await Future.delayed(const Duration(milliseconds: 1000));
+  runApp(_LoadedApp(root: root));
 }
 
-class _App extends StatelessWidget {
-  final GithubApi _api;
-
-  const _App(this._api);
+class _LoadingApp extends StatelessWidget {
+  const _LoadingApp();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Deep Lore',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      routerConfig: GoRouter(
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (_, __) => MyHomePage(
-              api: _api,
-            ),
-          ),
-        ],
+    return MaterialApp(
+      title: AppTheme.title,
+      theme: AppTheme.make(),
+      home: const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.api});
+class _LoadedApp extends StatelessWidget {
+  const _LoadedApp({required this.root});
 
-  final GithubApi api;
+  final GithubFolder root;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: AppTheme.title,
+      theme: AppTheme.make(),
+      routerConfig: GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, __) => _HomePage(
+              root: root,
+            ),
+            routes: [],
+          ),
+        ],
+      ),
+    );
+  }
+
+  GoRoute _toGoRoute(GithubFolder folder) {
+    return GoRoute(
+      path: '${folder.name}/',
+      builder: (_, __) => const Placeholder(),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  GithubFolder? _folder;
+class _HomePage extends StatelessWidget {
+  const _HomePage({required this.root});
 
-  void _get() async {
-    final root = await widget.api.getContents();
-    if (!mounted) return;
-
-    setState(() {
-      _folder = root;
-    });
-  }
+  final GithubFolder root;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('hey lol'),
-      ),
-      body: Center(
-        child: ListView(
-          children: [
-            Text(
-              'Github API Result:',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _get,
-        tooltip: 'Hit Github Hard BB',
-        child: const Icon(Icons.send),
+      body: Stack(
+        children: [
+          const Background(),
+          Row(
+            children: [
+              NavDrawer(
+                root: root,
+              ),
+              Expanded(
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
