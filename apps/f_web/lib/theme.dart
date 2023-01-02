@@ -14,6 +14,9 @@ abstract class AppTheme {
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
+      dividerTheme: const DividerThemeData(
+        space: 1,
+      ),
     );
   }
 

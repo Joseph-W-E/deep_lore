@@ -1,38 +1,40 @@
 import 'package:f_web/network.dart';
+import 'package:f_web/pages/home_page.dart';
 import 'package:f_web/theme.dart';
-import 'package:f_web/widgets/background.dart';
-import 'package:f_web/widgets/nav_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 void main() async {
-  runApp(const _LoadingApp());
-  final root = await GithubApi().getContents();
-  await Future.delayed(const Duration(milliseconds: 1000));
-  runApp(_LoadedApp(root: root));
+  runApp(const _App());
 }
 
-class _LoadingApp extends StatelessWidget {
-  const _LoadingApp();
+class _App extends StatefulWidget {
+  const _App({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppTheme.title,
-      theme: AppTheme.make(),
-      home: const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
-    );
-  }
+  State<_App> createState() => _AppState();
 }
 
-class _LoadedApp extends StatelessWidget {
-  const _LoadedApp({required this.root});
+class _AppState extends State<_App> {
+  GithubFolder? _root;
+  var _didError = false;
 
-  final GithubFolder root;
+  @override
+  void initState() {
+    super.initState();
+    _get();
+  }
+
+  void _get() async {
+    final api = GithubApi();
+    try {
+      final root = await api.getContents();
+      if (!mounted) return;
+      setState(() => _root = root);
+    } catch (_) {
+      setState(() => _didError = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,46 +45,9 @@ class _LoadedApp extends StatelessWidget {
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => _HomePage(
-              root: root,
+            builder: (_, __) => HomePage(
+              root: _root,
             ),
-            routes: [],
-          ),
-        ],
-      ),
-    );
-  }
-
-  GoRoute _toGoRoute(GithubFolder folder) {
-    return GoRoute(
-      path: '${folder.name}/',
-      builder: (_, __) => const Placeholder(),
-    );
-  }
-}
-
-class _HomePage extends StatelessWidget {
-  const _HomePage({required this.root});
-
-  final GithubFolder root;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          const Background(),
-          Row(
-            children: [
-              NavDrawer(
-                root: root,
-              ),
-              Expanded(
-                child: Container(
-                  color: Colors.transparent,
-                ),
-              ),
-            ],
           ),
         ],
       ),

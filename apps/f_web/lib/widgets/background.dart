@@ -7,21 +7,31 @@ class Background extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
-        _Image(
-          'assets/be_a_man_unarmored.png',
-          alignment: Alignment.centerRight,
-          aspectRatio: 1800 / 3750,
-        ),
-        Spacer(),
-        _Image(
-          'assets/be_a_man_armored.png',
-          alignment: Alignment.centerLeft,
-          aspectRatio: 1600 / 4000,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _Image(
+              'assets/be_a_man_unarmored.png',
+              alignment: Alignment.centerRight,
+              aspectRatio: 1800 / 3750,
+              width: width,
+              height: height,
+            ),
+            const Spacer(),
+            _Image(
+              'assets/be_a_man_armored.png',
+              alignment: Alignment.centerLeft,
+              aspectRatio: 1600 / 4000,
+              width: width,
+              height: height,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -31,15 +41,17 @@ class _Image extends StatelessWidget {
     this.asset, {
     required this.alignment,
     required this.aspectRatio,
+    required this.width,
+    required this.height,
   });
 
   final String asset;
   final Alignment alignment;
-  final double aspectRatio;
+  final double aspectRatio, width, height;
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final size = Size(width, height);
 
     return Opacity(
       opacity: 0.2,

@@ -26,17 +26,30 @@ class GithubApi {
     return root;
   }
 
+  Future<String> getMarkdown(GithubFile file) async {
+    const baseUrl =
+        'https://api.github.com/repos/joseph-w-e/deep_lore/contents';
+    final contents = (await _get('$baseUrl/${file.route}'));
+    final downloadUrl = contents['download_url'];
+    return (await _getRaw(downloadUrl));
+  }
+
   Future<dynamic> _get(String url) async =>
       jsonDecode((await http.get(Uri.parse(url))).body);
+
+  Future<String> _getRaw(String url) async =>
+      (await http.get(Uri.parse(url))).body;
 }
 
 class GithubFolder {
   final String name;
+  final GithubFolder? parent;
   final List<GithubFolder> folders;
   final List<GithubFile> files;
 
   GithubFolder({
     required this.name,
+    this.parent,
     List<GithubFolder>? folders,
     List<GithubFile>? files,
   })  : folders = folders ?? [],
@@ -46,10 +59,15 @@ class GithubFolder {
     if (path.isEmpty) {
       return;
     } else if (path.length == 1) {
+      final fileName = path.first;
+
+      // Casually ignore non-files.
+      if (!fileName.contains('.')) return;
+
       files.add(
         GithubFile(
-          name: path.first,
-          route: '', // todo
+          name: fileName,
+          parent: this,
         ),
       );
     } else {
@@ -68,7 +86,8 @@ class GithubFolder {
       folders.add(
         GithubFolder(
           name: f,
-        ),
+          parent: this,
+        )..add(path.sublist(1)),
       );
     }
   }
@@ -76,7 +95,21 @@ class GithubFolder {
 
 class GithubFile {
   final String name;
-  final String route;
+  final GithubFolder parent;
 
-  GithubFile({required this.name, required this.route});
+  GithubFile({required this.name, required this.parent});
+
+  String get route {
+    final path = [name];
+
+    GithubFolder? parent = this.parent;
+    while (parent != null) {
+      path.insert(0, parent.name);
+      parent = parent.parent;
+    }
+
+    path.removeAt(0); // remove Deep Lore hardcoded folder
+
+    return path.join('/');
+  }
 }
